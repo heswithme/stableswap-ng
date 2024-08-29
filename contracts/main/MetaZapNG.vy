@@ -9,6 +9,7 @@
 @dev Contract assumes Metapools have 2 coins.
 """
 
+
 interface ERC20:
     def transfer(receiver: address, amount: uint256): nonpayable
     def transferFrom(_sender: address, receiver: address, amount: uint256): nonpayable
@@ -16,70 +17,49 @@ interface ERC20:
     def decimals() -> uint256: view
     def balanceOf(owner: address) -> uint256: view
 
+
 interface StableSwapMetaNG:
     def add_liquidity(
-        amounts: uint256[META_N_COINS],
-        min_mint_amount: uint256,
-        receiver: address
+        amounts: uint256[META_N_COINS], min_mint_amount: uint256, receiver: address
     ) -> uint256: nonpayable
-    def remove_liquidity(
-        amount: uint256,
-        min_amounts: uint256[META_N_COINS]
-    ) -> uint256[META_N_COINS]: nonpayable
+    def remove_liquidity(amount: uint256, min_amounts: uint256[META_N_COINS]) -> uint256[META_N_COINS]: nonpayable
     def remove_liquidity_one_coin(
-        token_amount: uint256,
-        i: int128,
-        min_amount: uint256,
-        receiver: address
+        token_amount: uint256, i: int128, min_amount: uint256, receiver: address
     ) -> uint256: nonpayable
-    def remove_liquidity_imbalance(
-        amounts: uint256[META_N_COINS],
-        max_burn_amount: uint256
-    ) -> uint256: nonpayable
+    def remove_liquidity_imbalance(amounts: uint256[META_N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
     def calc_withdraw_one_coin(token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[META_N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
     def BASE_POOL() -> address: view
     def BASE_POOL_IS_NG() -> bool: view
 
+
 interface StableSwapNG:
     def N_COINS() -> uint256: view
-    def add_liquidity(
-        amounts: DynArray[uint256, MAX_COINS],
-        min_mint_amount: uint256
-    ) -> uint256: nonpayable
-    def remove_liquidity(
-        amount: uint256,
-        min_amounts: DynArray[uint256, MAX_COINS]
-    ) -> DynArray[uint256, MAX_COINS]: nonpayable
-    def remove_liquidity_one_coin(
-        token_amount: uint256,
-        i: int128,
-        min_amount: uint256
-    ) -> uint256: nonpayable
+    def add_liquidity(amounts: DynArray[uint256, MAX_COINS], min_mint_amount: uint256) -> uint256: nonpayable
+    def remove_liquidity(amount: uint256, min_amounts: DynArray[uint256, MAX_COINS]) -> DynArray[
+        uint256, MAX_COINS
+    ]: nonpayable
+    def remove_liquidity_one_coin(token_amount: uint256, i: int128, min_amount: uint256) -> uint256: nonpayable
     def remove_liquidity_imbalance(
-        amounts: DynArray[uint256, MAX_COINS],
-        max_burn_amount: uint256
+        amounts: DynArray[uint256, MAX_COINS], max_burn_amount: uint256
     ) -> uint256: nonpayable
     def calc_withdraw_one_coin(token_amount: uint256, i: int128) -> uint256: view
-    def calc_token_amount(
-        amounts: DynArray[uint256, MAX_COINS],
-        deposit: bool
-    ) -> uint256: view
+    def calc_token_amount(amounts: DynArray[uint256, MAX_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
     def fee() -> uint256: view
 
 
 struct BasePool:
-    pool_address: address
-    coins: DynArray[address, MAX_COINS]
+        pool_address: address
+        coins: DynArray[address, MAX_COINS]
 
 
 META_N_COINS: constant(uint256) = 2
 MAX_COINS: constant(uint256) = 8
 MAX_ALL_COINS: constant(uint256) = MAX_COINS + 1
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
+FEE_DENOMINATOR: constant(uint256) = 10**10
+FEE_IMPRECISION: constant(uint256) = 100 * 10**8  # % of the fee
 
 # coin -> pool -> is approved to transfer?
 is_approved: HashMap[address, HashMap[address, bool]]
@@ -111,7 +91,6 @@ def _approve_pool_to_spend_zap_coins(
 @internal
 @view
 def _fetch_base_pool_data(_pool: address) -> (address, DynArray[address, MAX_COINS]):
-
     base_pool: address = StableSwapMetaNG(_pool).BASE_POOL()
     assert base_pool != empty(address)  # dev: not a metapool
     base_coins: DynArray[address, MAX_COINS] = self.get_coins_from_pool(base_pool)
@@ -120,30 +99,21 @@ def _fetch_base_pool_data(_pool: address) -> (address, DynArray[address, MAX_COI
 
 @internal
 def _base_pool_data(_pool: address) -> (address, DynArray[address, MAX_COINS]):
-
     base_pool_data: BasePool = self.base_pool_registry[_pool]
     if base_pool_data.pool_address == empty(address):
-
         base_pool: address = empty(address)
         base_coins: DynArray[address, MAX_COINS] = empty(DynArray[address, MAX_COINS])
         base_pool, base_coins = self._fetch_base_pool_data(_pool)
 
-        self.base_pool_registry[_pool] = BasePool(
-            {pool_address: base_pool, coins: base_coins}
-        )
+        self.base_pool_registry[_pool] = BasePool({pool_address: base_pool, coins: base_coins})
         return base_pool, base_coins
 
     return base_pool_data.pool_address, base_pool_data.coins
 
 
-
 @view
 @external
-def calc_token_amount(
-    _pool: address,
-    _amounts: DynArray[uint256, MAX_ALL_COINS],
-    _is_deposit: bool
-) -> uint256:
+def calc_token_amount(_pool: address, _amounts: DynArray[uint256, MAX_ALL_COINS], _is_deposit: bool) -> uint256:
     """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @dev This calculation accounts for slippage, but not fees.
@@ -199,7 +169,9 @@ def add_liquidity(
     if not self.base_pool_coins_spending_approved[base_pool]:
         self._approve_pool_to_spend_zap_coins(base_pool, base_coins)
 
+
     # ------------------------ Transfer tokens to Zap ------------------------
+
 
     meta_amounts: uint256[META_N_COINS] = empty(uint256[META_N_COINS])
 
@@ -213,9 +185,9 @@ def add_liquidity(
         ERC20(coin).transferFrom(msg.sender, self, _deposit_amounts[0])
         meta_amounts[0] = _deposit_amounts[0]
 
+
     # Transfer base pool coins (if any):
     for i in range(n_all_coins, bound=MAX_ALL_COINS):
-
         amount: uint256 = _deposit_amounts[i]
         base_amounts.append(0)
         if i == 0 or amount == 0:
@@ -229,7 +201,9 @@ def add_liquidity(
         ERC20(coin).transferFrom(msg.sender, self, amount)
         base_amounts[base_idx] = amount
 
+
     # ----------------------- Deposit to the base pool -----------------------
+
 
     if deposit_base:
         meta_amounts[META_N_COINS - 1] = StableSwapNG(base_pool).add_liquidity(base_amounts, 0)
@@ -239,11 +213,8 @@ def add_liquidity(
 
     # ----------------------- Deposit to the meta pool -----------------------
 
-    return StableSwapMetaNG(_pool).add_liquidity(
-        meta_amounts,
-        _min_mint_amount,
-        _receiver
-    )
+
+    return StableSwapMetaNG(_pool).add_liquidity(meta_amounts, _min_mint_amount, _receiver)
 
 
 @view
@@ -262,10 +233,7 @@ def calc_withdraw_one_coin(_pool: address, _token_amount: uint256, i: int128) ->
         base_pool: address = StableSwapMetaNG(_pool).BASE_POOL()
         assert base_pool != empty(address)  # dev: not a metapool!
         _base_tokens: uint256 = StableSwapMetaNG(_pool).calc_withdraw_one_coin(_token_amount, META_N_COINS - 1)
-        return StableSwapNG(base_pool).calc_withdraw_one_coin(
-            _base_tokens,
-            i - convert(META_N_COINS - 1, int128)
-        )
+        return StableSwapNG(base_pool).calc_withdraw_one_coin(_base_tokens, i - convert(META_N_COINS - 1, int128))
 
 
 @external
@@ -273,7 +241,7 @@ def remove_liquidity(
     _pool: address,
     _burn_amount: uint256,
     _min_amounts: DynArray[uint256, MAX_ALL_COINS],
-    _receiver: address = msg.sender
+    _receiver: address = msg.sender,
 ) -> DynArray[uint256, MAX_ALL_COINS]:
     """
     @notice Withdraw and unwrap coins from the pool
@@ -296,8 +264,7 @@ def remove_liquidity(
 
     # Withdraw from meta
     meta_received: uint256[META_N_COINS] = StableSwapMetaNG(_pool).remove_liquidity(
-        _burn_amount,
-        [_min_amounts[0], convert(0, uint256)]
+        _burn_amount, [_min_amounts[0], convert(0, uint256)]
     )
 
     # Withdraw from base
@@ -311,11 +278,10 @@ def remove_liquidity(
     amounts.append(meta_received[0])
 
     for i in range(base_n_coins + 1, bound=MAX_ALL_COINS):
-
         if i == 0:
             continue
 
-        coin = base_coins[i-1]
+        coin = base_coins[i - 1]
         amounts.append(ERC20(coin).balanceOf(self))
 
         ERC20(coin).transfer(_receiver, amounts[i])
@@ -325,11 +291,7 @@ def remove_liquidity(
 
 @external
 def remove_liquidity_one_coin(
-    _pool: address,
-    _burn_amount: uint256,
-    i: int128,
-    _min_amount: uint256,
-    _receiver: address=msg.sender
+    _pool: address, _burn_amount: uint256, i: int128, _min_amount: uint256, _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw and unwrap a single coin from the pool
@@ -344,9 +306,7 @@ def remove_liquidity_one_coin(
 
     coin_amount: uint256 = 0
     if i == 0:
-        coin_amount = StableSwapMetaNG(_pool).remove_liquidity_one_coin(
-            _burn_amount, i, _min_amount, _receiver
-        )
+        coin_amount = StableSwapMetaNG(_pool).remove_liquidity_one_coin(_burn_amount, i, _min_amount, _receiver)
     else:
         base_pool: address = empty(address)
         base_coins: DynArray[address, MAX_COINS] = empty(DynArray[address, MAX_COINS])
@@ -371,7 +331,7 @@ def remove_liquidity_imbalance(
     _pool: address,
     _amounts: DynArray[uint256, MAX_ALL_COINS],
     _max_burn_amount: uint256,
-    _receiver: address=msg.sender
+    _receiver: address = msg.sender,
 ) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -411,6 +371,7 @@ def remove_liquidity_imbalance(
         amounts_meta[1] = StableSwapNG(base_pool).calc_token_amount(amounts_base, False)
         amounts_meta[1] += amounts_meta[1] * fee / FEE_DENOMINATOR + 1
 
+
     # withdraw from metapool and return the remaining LP tokens
     burn_amount: uint256 = StableSwapMetaNG(_pool).remove_liquidity_imbalance(amounts_meta, _max_burn_amount)
     ERC20(_pool).transfer(msg.sender, _max_burn_amount - burn_amount)
@@ -427,6 +388,7 @@ def remove_liquidity_imbalance(
                 ERC20(coin).approve(_pool, MAX_UINT256)
                 self.is_approved[coin][_pool] = True
             burn_amount -= StableSwapMetaNG(_pool).add_liquidity([convert(0, uint256), leftover], 0, msg.sender)
+
 
         # transfer withdrawn base pool tokens to caller
         for i in range(base_n_coins, bound=MAX_COINS):

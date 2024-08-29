@@ -19,25 +19,30 @@ SYMBOL: immutable(String[5])
 DECIMALS: immutable(uint8)
 _DECIMALS_OFFSET: immutable(uint8)
 
+
 event Transfer:
     sender: indexed(address)
     receiver: indexed(address)
     amount: uint256
+
 
 event Approval:
     owner: indexed(address)
     spender: indexed(address)
     allowance: uint256
 
+
 ##### ERC4626 #####
 
 asset: public(immutable(ERC20))
+
 
 event Deposit:
     depositor: indexed(address)
     receiver: indexed(address)
     assets: uint256
     shares: uint256
+
 
 event Withdraw:
     withdrawer: indexed(address)
@@ -48,14 +53,9 @@ event Withdraw:
 
 
 @external
-def __init__(
-    _name: String[10],
-    _symbol: String[5],
-    _decimals: uint8,
-    _asset: ERC20
-):
+def __init__(_name: String[10], _symbol: String[5], _decimals: uint8, _asset: ERC20):
     NAME = _name
-    SYMBOL =  _symbol
+    SYMBOL = _symbol
     DECIMALS = _decimals
     asset = _asset
 
@@ -156,7 +156,7 @@ def previewDeposit(assets: uint256) -> uint256:
 
 
 @external
-def deposit(assets: uint256, receiver: address=msg.sender) -> uint256:
+def deposit(assets: uint256, receiver: address = msg.sender) -> uint256:
     shares: uint256 = self._convertToShares(assets)
     asset.transferFrom(msg.sender, self, assets)
 
@@ -186,7 +186,7 @@ def previewMint(shares: uint256) -> uint256:
 
 
 @external
-def mint(shares: uint256, receiver: address=msg.sender) -> uint256:
+def mint(shares: uint256, receiver: address = msg.sender) -> uint256:
     assets: uint256 = self._convertToAssets(shares)
 
     if assets == 0 and asset.balanceOf(self) == 0:
@@ -220,7 +220,7 @@ def previewWithdraw(assets: uint256) -> uint256:
 
 
 @external
-def withdraw(assets: uint256, receiver: address=msg.sender, owner: address=msg.sender) -> uint256:
+def withdraw(assets: uint256, receiver: address = msg.sender, owner: address = msg.sender) -> uint256:
     shares: uint256 = self._convertToShares(assets)
 
     # NOTE: Vyper does lazy eval on if, so this avoids SLOADs most of the time
@@ -252,7 +252,7 @@ def previewRedeem(shares: uint256) -> uint256:
 
 
 @external
-def redeem(shares: uint256, receiver: address=msg.sender, owner: address=msg.sender) -> uint256:
+def redeem(shares: uint256, receiver: address = msg.sender, owner: address = msg.sender) -> uint256:
     if owner != msg.sender:
         self.allowance[owner][msg.sender] -= shares
 

@@ -97,20 +97,20 @@ def approve(_spender: address, _value: uint256) -> bool:
 @view
 def _share_price() -> uint256:
     if self.totalShares == 0:
-        return 10 ** self.decimals
-    return self.totalCoin * 10 ** self.decimals / self.totalShares
+        return 10**self.decimals
+    return self.totalCoin * 10**self.decimals / self.totalShares
 
 
 @internal
 @view
 def _get_coins_by_shares(_shares: uint256) -> uint256:
-    return _shares * self._share_price() / 10 ** self.decimals
+    return _shares * self._share_price() / 10**self.decimals
 
 
 @internal
 @view
 def _get_shares_by_coins(_coins: uint256) -> uint256:
-    return _coins * 10 ** self.decimals / self._share_price()
+    return _coins * 10**self.decimals / self._share_price()
 
 
 @external

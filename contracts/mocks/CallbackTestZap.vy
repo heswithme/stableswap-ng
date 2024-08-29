@@ -2,6 +2,7 @@
 
 from vyper.interfaces import ERC20
 
+
 interface Swap:
     def exchange_extended(
         i: uint256,
@@ -11,8 +12,9 @@ interface Swap:
         use_eth: bool,
         sender: address,
         receiver: address,
-        cb: bytes32
+        cb: bytes32,
     ) -> uint256: nonpayable
+
 
 input_amount: public(uint256)
 output_amount: public(uint256)
@@ -52,15 +54,15 @@ def set_evil_input_amount(x: uint256):
 
 @external
 def good_exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256, use_eth: bool = False) -> uint256:
-    selector: uint256 = shift(convert(method_id("good_callback(address,address,address,uint256,uint256)"), uint256), 224)
-    return Swap(POOL).exchange_extended(
-        i, j, dx, min_dy, use_eth, msg.sender, msg.sender,
-        convert(selector, bytes32))
+    selector: uint256 = shift(
+        convert(method_id("good_callback(address,address,address,uint256,uint256)"), uint256), 224
+    )
+    return Swap(POOL).exchange_extended(i, j, dx, min_dy, use_eth, msg.sender, msg.sender, convert(selector, bytes32))
 
 
 @external
 def evil_exchange(i: uint256, j: uint256, dx: uint256, min_dy: uint256, use_eth: bool = False) -> uint256:
-    selector: uint256 = shift(convert(method_id("evil_callback(address,address,address,uint256,uint256)"), uint256), 224)
-    return Swap(POOL).exchange_extended(
-        i, j, dx, min_dy, use_eth, msg.sender, msg.sender,
-        convert(selector, bytes32))
+    selector: uint256 = shift(
+        convert(method_id("evil_callback(address,address,address,uint256,uint256)"), uint256), 224
+    )
+    return Swap(POOL).exchange_extended(i, j, dx, min_dy, use_eth, msg.sender, msg.sender, convert(selector, bytes32))

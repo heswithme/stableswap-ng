@@ -10,6 +10,7 @@
 
 from vyper.interfaces import ERC20Detailed
 
+
 interface StableSwapNG:
     def N_COINS() -> uint256: view
     def BASE_POOL() -> address: view
@@ -25,11 +26,11 @@ interface StableSwapNG:
     def offpeg_fee_multiplier() -> uint256: view
     def coins(i: uint256) -> address: view
 
+
 A_PRECISION: constant(uint256) = 100
 MAX_COINS: constant(uint256) = 8
-PRECISION: constant(uint256) = 10 ** 18
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-
+PRECISION: constant(uint256) = 10**18
+FEE_DENOMINATOR: constant(uint256) = 10**10
 
 VERSION: public(constant(String[8])) = "1.2.0"
 # first version was: 0xe0B15824862f3222fdFeD99FeBD0f7e0EC26E1FA (ethereum mainnet)
@@ -94,7 +95,6 @@ def get_dx_underlying(
     dy: uint256,
     pool: address,
 ) -> uint256:
-
     BASE_POOL: address = StableSwapNG(pool).BASE_POOL()
     BASE_N_COINS: uint256 = StableSwapNG(pool).BASE_N_COINS()
     N_COINS: uint256 = StableSwapNG(pool).N_COINS()
@@ -106,6 +106,7 @@ def get_dx_underlying(
     if min(i, j) > 0:
         raise "Not a Metapool Swap. Use Base pool."
 
+
     # CASE 2:
     #    1. meta token_0 of (unknown amount) > base pool lp_token
     #    2. base pool lp_token > calc_withdraw_one_coin gives dy amount of (j-1)th base coin
@@ -115,9 +116,15 @@ def get_dx_underlying(
     if i == 0:
         # Calculate LP tokens that are burnt to receive dy amount of base_j tokens.
         lp_amount_burnt: uint256 = self._base_calc_token_amount(
-            dy, j - 1, BASE_N_COINS, BASE_POOL, base_pool_lp_token, False,
+            dy,
+            j - 1,
+            BASE_N_COINS,
+            BASE_POOL,
+            base_pool_lp_token,
+            False,
         )
         return self._get_dx(0, 1, lp_amount_burnt, pool, False, N_COINS)
+
 
     # CASE 3: Swap in token i-1 from base pool and swap out dy amount of token 0 (j) from metapool.
     #    1. deposit i-1 token from base pool > receive base pool lp_token
@@ -130,7 +137,7 @@ def get_dx_underlying(
     #       is needed to mint that many base_lp_tokens. Instead, we will use calc_withdraw_one_coin. That's
     #       close enough.
     lp_amount_required: uint256 = self._get_dx(1, 0, dy, pool, False, N_COINS)
-    return StableSwapNG(BASE_POOL).calc_withdraw_one_coin(lp_amount_required, i-1)
+    return StableSwapNG(BASE_POOL).calc_withdraw_one_coin(lp_amount_required, i - 1)
 
 
 @view
@@ -174,23 +181,25 @@ def get_dy_underlying(
         meta_j = 1
 
     if i == 0:
-
         x = xp[i] + dx * rates[0] / 10**18
 
     else:
-
         if j == 0:
 
             # i is from BasePool
             base_n_coins: uint256 = StableSwapNG(pool).BASE_N_COINS()
-            x = self._base_calc_token_amount(
-                dx,
-                base_i,
-                base_n_coins,
-                BASE_POOL,
-                base_lp_token,
-                True,
-            ) * rates[1] / PRECISION
+            x = (
+                self._base_calc_token_amount(
+                    dx,
+                    base_i,
+                    base_n_coins,
+                    BASE_POOL,
+                    base_lp_token,
+                    True,
+                )
+                * rates[1]
+                / PRECISION
+            )
 
             # Adding number of pool tokens
             x += xp[1]
@@ -225,11 +234,7 @@ def get_dy_underlying(
 
 @view
 @external
-def calc_token_amount(
-    _amounts: DynArray[uint256, MAX_COINS],
-    _is_deposit: bool,
-    pool: address
-) -> uint256:
+def calc_token_amount(_amounts: DynArray[uint256, MAX_COINS], _is_deposit: bool, pool: address) -> uint256:
     """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @dev Only works for StableswapNG pools and not legacy versions
@@ -238,13 +243,7 @@ def calc_token_amount(
     @return Expected amount of LP tokens received
     """
 
-    return self._calc_token_amount(
-        _amounts,
-        _is_deposit,
-        pool,
-        pool,
-        StableSwapNG(pool).N_COINS()
-    )
+    return self._calc_token_amount(_amounts, _is_deposit, pool, pool, StableSwapNG(pool).N_COINS())
 
 
 @view
@@ -277,7 +276,6 @@ def calc_withdraw_one_coin(_burn_amount: uint256, i: int128, pool: address) -> u
     dynamic_fee: uint256 = 0
 
     for j in range(MAX_COINS):
-
         if j == N_COINS:
             break
 
@@ -301,7 +299,7 @@ def calc_withdraw_one_coin(_burn_amount: uint256, i: int128, pool: address) -> u
 
 @view
 @external
-def dynamic_fee(i: int128, j: int128, pool:address) -> uint256:
+def dynamic_fee(i: int128, j: int128, pool: address) -> uint256:
     """
     @notice Return the fee for swapping between `i` and `j`
     @param i Index value for the coin to send
@@ -326,19 +324,14 @@ def dynamic_fee(i: int128, j: int128, pool:address) -> uint256:
 @view
 @internal
 def _has_static_fee(pool: address) -> bool:
-
     success: bool = False
     response: Bytes[32] = b""
     success, response = raw_call(
         pool,
-        concat(
-            method_id("dynamic_fee(int128,int128)"),
-            convert(1, bytes32),
-            convert(0, bytes32)
-        ),
+        concat(method_id("dynamic_fee(int128,int128)"), convert(1, bytes32), convert(0, bytes32)),
         max_outsize=32,
         revert_on_failure=False,
-        is_static_call=True
+        is_static_call=True,
     )
 
     return success
@@ -346,15 +339,7 @@ def _has_static_fee(pool: address) -> bool:
 
 @view
 @internal
-def _get_dx(
-    i: int128,
-    j: int128,
-    dy: uint256,
-    pool: address,
-    static_fee: bool,
-    N_COINS: uint256
-) -> uint256:
-
+def _get_dx(i: int128, j: int128, dy: uint256, pool: address, static_fee: bool, N_COINS: uint256) -> uint256:
     rates: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
     balances: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
     xp: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
@@ -379,15 +364,11 @@ def _get_dx(
 @view
 @internal
 def _dynamic_fee(xpi: uint256, xpj: uint256, _fee: uint256, _fee_multiplier: uint256) -> uint256:
-
     if _fee_multiplier <= FEE_DENOMINATOR:
         return _fee
 
-    xps2: uint256 = (xpi + xpj) ** 2
-    return (
-        (_fee_multiplier * _fee) /
-        ((_fee_multiplier - FEE_DENOMINATOR) * 4 * xpi * xpj / xps2 + FEE_DENOMINATOR)
-    )
+    xps2: uint256 = (xpi + xpj)**2
+    return ((_fee_multiplier * _fee) / ((_fee_multiplier - FEE_DENOMINATOR) * 4 * xpi * xpj / xps2 + FEE_DENOMINATOR))
 
 
 @internal
@@ -399,28 +380,20 @@ def _calc_token_amount(
     pool_lp_token: address,
     n_coins: uint256,
 ) -> uint256:
-
     amp: uint256 = StableSwapNG(pool).A() * A_PRECISION
 
     rates: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
     old_balances: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
     xp: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
 
-    pool_is_ng: bool = raw_call(
-        pool,
-        method_id("D_ma_time()"),
-        revert_on_failure=False,
-        is_static_call=True
-    )
+    pool_is_ng: bool = raw_call(pool, method_id("D_ma_time()"), revert_on_failure=False, is_static_call=True)
     use_dynamic_fees: bool = True
     if pool_is_ng:
         rates, old_balances, xp = self._get_rates_balances_xp(pool, n_coins)
     else:
         use_dynamic_fees = False
         for i in range(n_coins, bound=MAX_COINS):
-            rates.append(
-                10 ** (36 - convert(ERC20Detailed(StableSwapNG(pool).coins(i)).decimals(), uint256))
-            )
+            rates.append(10**(36 - convert(ERC20Detailed(StableSwapNG(pool).coins(i)).decimals(), uint256)))
             old_balances.append(StableSwapNG(pool).balances(i))
             xp.append(rates[i] * old_balances[i] / PRECISION)
 
@@ -457,7 +430,6 @@ def _calc_token_amount(
         ys: uint256 = (D0 + D1) / n_coins
 
         for i in range(n_coins, bound=MAX_COINS):
-
             ideal_balance: uint256 = D1 * old_balances[i] / D0
             difference: uint256 = 0
             new_balance: uint256 = new_balances[i]
@@ -474,7 +446,6 @@ def _calc_token_amount(
                 new_balances[i] -= _dynamic_fee_i * difference / FEE_DENOMINATOR
             else:
                 new_balances[i] -= base_fee * difference / FEE_DENOMINATOR
-
         for idx in range(n_coins, bound=MAX_COINS):
             xp[idx] = rates[idx] * new_balances[idx] / PRECISION
 
@@ -500,29 +471,21 @@ def _base_calc_token_amount(
     base_pool_lp_token: address,
     is_deposit: bool,
 ) -> uint256:
-
     base_inputs: DynArray[uint256, MAX_COINS] = [0, 0, 0, 0, 0, 0, 0, 0]
     base_inputs[base_i] = dx
 
-    return self._calc_token_amount(
-        base_inputs,
-        is_deposit,
-        base_pool,
-        base_pool_lp_token,
-        base_n_coins
-    )
+    return self._calc_token_amount(base_inputs, is_deposit, base_pool, base_pool_lp_token, base_n_coins)
 
 
 @internal
 @pure
 def newton_y(b: uint256, c: uint256, D: uint256, _y: uint256) -> uint256:
-
     y_prev: uint256 = 0
     y: uint256 = _y
 
     for _i in range(255):
         y_prev = y
-        y = (y*y + c) / (2 * y + b - D)
+        y = (y * y + c) / (2 * y + b - D)
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
@@ -536,13 +499,7 @@ def newton_y(b: uint256, c: uint256, D: uint256, _y: uint256) -> uint256:
 @view
 @internal
 def get_y(
-    i: int128,
-    j: int128,
-    x: uint256,
-    xp: DynArray[uint256, MAX_COINS],
-    _amp: uint256,
-    _D: uint256,
-    N_COINS: uint256
+    i: int128, j: int128, x: uint256, xp: DynArray[uint256, MAX_COINS], _amp: uint256, _D: uint256, N_COINS: uint256
 ) -> uint256:
     """
     Calculate x[j] if one makes x[i] = x
@@ -555,8 +512,8 @@ def get_y(
     """
     # x in the input is converted to the same price/precision
 
-    assert i != j       # dev: same coin
-    assert j >= 0       # dev: j below zero
+    assert i != j  # dev: same coin
+    assert j >= 0  # dev: j below zero
     assert j < convert(N_COINS, int128)  # dev: j above N_COINS
 
     # should be unreachable, but good for safety
@@ -571,11 +528,10 @@ def get_y(
     Ann: uint256 = amp * N_COINS
 
     for _i in range(MAX_COINS):
-
         if _i == N_COINS:
             break
 
-        if  convert(_i, int128) == i:
+        if convert(_i, int128) == i:
             _x = x
         elif convert(_i, int128) != j:
             _x = xp[_i]
@@ -616,7 +572,6 @@ def get_D(_xp: DynArray[uint256, MAX_COINS], _amp: uint256, N_COINS: uint256) ->
     Ann: uint256 = _amp * N_COINS
 
     for i in range(255):
-
         D_P: uint256 = D
         for x in _xp:
             D_P = D_P * D / x
@@ -631,20 +586,14 @@ def get_D(_xp: DynArray[uint256, MAX_COINS], _amp: uint256, N_COINS: uint256) ->
         else:
             if Dprev - D <= 1:
                 return D
-    # convergence typically occurs in 4 rounds or less, this should be unreachable!
-    # if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
+            # convergence typically occurs in 4 rounds or less, this should be unreachable!
+            # if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
     raise
 
 
 @pure
 @internal
-def get_y_D(
-    A: uint256,
-    i: int128,
-    xp: DynArray[uint256, MAX_COINS],
-    D: uint256,
-    N_COINS: uint256
-) -> uint256:
+def get_y_D(A: uint256, i: int128, xp: DynArray[uint256, MAX_COINS], D: uint256, N_COINS: uint256) -> uint256:
     """
     Calculate x[i] if one reduces D from being calculated for xp to D
 
@@ -667,7 +616,6 @@ def get_y_D(
     Ann: uint256 = A * N_COINS
 
     for _i in range(MAX_COINS):
-
         if _i == N_COINS:
             break
 
@@ -687,12 +635,9 @@ def get_y_D(
 
 @view
 @internal
-def _get_rates_balances_xp(pool: address, N_COINS: uint256) -> (
-    DynArray[uint256, MAX_COINS],
-    DynArray[uint256, MAX_COINS],
-    DynArray[uint256, MAX_COINS],
-):
-
+def _get_rates_balances_xp(
+    pool: address, N_COINS: uint256
+) -> (DynArray[uint256, MAX_COINS], DynArray[uint256, MAX_COINS], DynArray[uint256, MAX_COINS],):
     rates: DynArray[uint256, MAX_COINS] = StableSwapNG(pool).stored_rates()
     balances: DynArray[uint256, MAX_COINS] = StableSwapNG(pool).get_balances()
     xp: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])

@@ -13,6 +13,7 @@ from vyper.interfaces import ERC20
 
 implements: ERC20
 
+
 interface Curve:
     def owner() -> address: view
 
@@ -21,6 +22,7 @@ event Transfer:
     _from: indexed(address)
     _to: indexed(address)
     _value: uint256
+
 
 event Approval:
     _owner: indexed(address)
@@ -58,7 +60,7 @@ def decimals() -> uint256:
 
 
 @external
-def transfer(_to : address, _value : uint256) -> bool:
+def transfer(_to: address, _value: uint256) -> bool:
     """
     @dev Transfer token for a specified address
     @param _to The address to transfer to.
@@ -74,12 +76,12 @@ def transfer(_to : address, _value : uint256) -> bool:
 
 
 @external
-def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+def transferFrom(_from: address, _to: address, _value: uint256) -> bool:
     """
-     @dev Transfer tokens from one address to another.
-     @param _from address The address which you want to send tokens from
-     @param _to address The address which you want to transfer to
-     @param _value uint256 the amount of tokens to be transferred
+    @dev Transfer tokens from one address to another.
+    @param _from address The address which you want to send tokens from
+    @param _to address The address which you want to transfer to
+    @param _value uint256 the amount of tokens to be transferred
     """
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
@@ -93,7 +95,7 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
 
 
 @external
-def approve(_spender : address, _value : uint256) -> bool:
+def approve(_spender: address, _value: uint256) -> bool:
     """
     @notice Approve the passed address to transfer the specified amount of
             tokens on behalf of msg.sender

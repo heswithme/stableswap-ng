@@ -9,6 +9,7 @@
 
 from vyper.interfaces import ERC20
 
+
 interface CurveToken:
     def totalSupply() -> uint256: view
     def mint(_to: address, _value: uint256) -> bool: nonpayable
@@ -23,6 +24,7 @@ event TokenExchange:
     bought_id: int128
     tokens_bought: uint256
 
+
 event AddLiquidity:
     provider: indexed(address)
     token_amounts: uint256[N_COINS]
@@ -30,17 +32,20 @@ event AddLiquidity:
     invariant: uint256
     token_supply: uint256
 
+
 event RemoveLiquidity:
     provider: indexed(address)
     token_amounts: uint256[N_COINS]
     fees: uint256[N_COINS]
     token_supply: uint256
 
+
 event RemoveLiquidityOne:
     provider: indexed(address)
     token_amount: uint256
     coin_amount: uint256
     token_supply: uint256
+
 
 event RemoveLiquidityImbalance:
     provider: indexed(address)
@@ -49,27 +54,33 @@ event RemoveLiquidityImbalance:
     invariant: uint256
     token_supply: uint256
 
+
 event CommitNewAdmin:
     deadline: indexed(uint256)
     admin: indexed(address)
 
+
 event NewAdmin:
     admin: indexed(address)
+
 
 event CommitNewFee:
     deadline: indexed(uint256)
     fee: uint256
     admin_fee: uint256
 
+
 event NewFee:
     fee: uint256
     admin_fee: uint256
+
 
 event RampA:
     old_A: uint256
     new_A: uint256
     initial_time: uint256
     future_time: uint256
+
 
 event StopRampA:
     A: uint256
@@ -80,15 +91,15 @@ event StopRampA:
 N_COINS: constant(uint256) = 3
 N_COINS_128: constant(int128) = 3
 PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1, 1]
-RATES: constant(uint256[N_COINS]) = [10 ** 18, 10 ** 18, 10 ** 18]
+RATES: constant(uint256[N_COINS]) = [10**18, 10**18, 10**18]
 
 # fixed constants
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+FEE_DENOMINATOR: constant(uint256) = 10**10
+PRECISION: constant(uint256) = 10**18  # The precision to convert to
 
-MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
-MAX_FEE: constant(uint256) = 5 * 10 ** 9
-MAX_A: constant(uint256) = 10 ** 6
+MAX_ADMIN_FEE: constant(uint256) = 10 * 10**9
+MAX_FEE: constant(uint256) = 5 * 10**9
+MAX_A: constant(uint256) = 10**6
 MAX_A_CHANGE: constant(uint256) = 10
 
 ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
@@ -121,12 +132,7 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 @external
 def __init__(
-    _owner: address,
-    _coins: address[N_COINS],
-    _pool_token: address,
-    _A: uint256,
-    _fee: uint256,
-    _admin_fee: uint256
+    _owner: address, _coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256, _admin_fee: uint256
 ):
     """
     @notice Contract constructor
@@ -166,7 +172,6 @@ def _A() -> uint256:
             return A0 + (A1 - A0) * (block.timestamp - t0) / (t1 - t0)
         else:
             return A0 - (A0 - A1) * (block.timestamp - t0) / (t1 - t0)
-
     else:  # when t1 == 0 or block.timestamp >= t1
         return A1
 
@@ -226,7 +231,9 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
     for _i in range(255):
         D_P: uint256 = D
         for _x in _xp:
-            D_P = D_P * D / (_x * N_COINS)  # If division by 0, this will be borked: only withdrawal will work. And that is good
+            D_P = (
+                D_P * D / (_x * N_COINS)
+            )  # If division by 0, this will be borked: only withdrawal will work. And that is good
         Dprev = D
         D = (Ann * S / A_PRECISION + D_P * N_COINS) * D / ((Ann - A_PRECISION) * D / A_PRECISION + (N_COINS + 1) * D_P)
         # Equality with the precision of 1
@@ -236,8 +243,8 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
         else:
             if Dprev - D <= 1:
                 return D
-    # convergence typically occurs in 4 rounds or less, this should be unreachable!
-    # if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
+            # convergence typically occurs in 4 rounds or less, this should be unreachable!
+            # if it does happen the pool is borked and LPs can withdraw via `remove_liquidity`
     raise
 
 
@@ -292,7 +299,7 @@ def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint256:
     """
     @notice Deposit coins into the pool
@@ -316,6 +323,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
             assert _amounts[i] > 0  # dev: initial deposit requires all coins
         # balances store amounts of c-tokens
         new_balances[i] += _amounts[i]
+
 
     # Invariant after change
     D1: uint256 = self._get_D_mem(new_balances, amp)
@@ -388,8 +396,8 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     """
     # x in the input is converted to the same price/precision
 
-    assert i != j       # dev: same coin
-    assert j >= 0       # dev: j below zero
+    assert i != j  # dev: same coin
+    assert j >= 0  # dev: j below zero
     assert j < N_COINS_128  # dev: j above N_COINS
 
     # should be unreachable, but good for safety
@@ -418,7 +426,7 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     y: uint256 = D
     for _i in range(255):
         y_prev = y
-        y = (y*y + c) / (2 * y + b - D)
+        y = (y * y + c) / (2 * y + b - D)
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
@@ -443,7 +451,7 @@ def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     """
     @notice Perform an exchange between two coins
@@ -509,7 +517,7 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
     """
     @notice Withdraw coins from the pool
@@ -539,7 +547,6 @@ def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint25
         )
         if len(_response) > 0:
             assert convert(_response, bool)
-
     CurveToken(lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
     log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
@@ -548,7 +555,7 @@ def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint25
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uint256) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -603,7 +610,6 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
             )
             if len(_response) > 0:
                 assert convert(_response, bool)
-
     log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, token_supply - token_amount)
 
     return token_amount
@@ -645,7 +651,7 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
 
     for _i in range(255):
         y_prev = y
-        y = (y*y + c) / (2 * y + b - D)
+        y = (y * y + c) / (2 * y + b - D)
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
@@ -700,7 +706,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256) -> uint256:
     """
     @notice Withdraw a single coin from the pool

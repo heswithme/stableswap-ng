@@ -70,8 +70,10 @@ interface Factory:
     def admin() -> address: view
     def views_implementation() -> address: view
 
+
 interface ERC1271:
     def isValidSignature(_hash: bytes32, _signature: Bytes[65]) -> bytes32: view
+
 
 interface StableSwapViews:
     def get_dx(i: int128, j: int128, dy: uint256, pool: address) -> uint256: view
@@ -79,28 +81,26 @@ interface StableSwapViews:
     def get_dx_underlying(i: int128, j: int128, dy: uint256, pool: address) -> uint256: view
     def get_dy_underlying(i: int128, j: int128, dx: uint256, pool: address) -> uint256: view
     def dynamic_fee(i: int128, j: int128, pool: address) -> uint256: view
-    def calc_token_amount(
-        _amounts: DynArray[uint256, MAX_COINS],
-        _is_deposit: bool,
-        _pool: address
-    ) -> uint256: view
+    def calc_token_amount(_amounts: DynArray[uint256, MAX_COINS], _is_deposit: bool, _pool: address) -> uint256: view
+
 
 interface StableSwap2:
     def add_liquidity(amounts: uint256[2], min_mint_amount: uint256): nonpayable
 
+
 interface StableSwap3:
     def add_liquidity(amounts: uint256[3], min_mint_amount: uint256): nonpayable
 
+
 interface StableSwapNG:
-    def add_liquidity(
-        amounts: DynArray[uint256, MAX_COINS],
-        min_mint_amount: uint256
-    ) -> uint256: nonpayable
+    def add_liquidity(amounts: DynArray[uint256, MAX_COINS], min_mint_amount: uint256) -> uint256: nonpayable
+
 
 interface StableSwap:
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
     def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256): nonpayable
     def get_virtual_price() -> uint256: view
+
 
 interface Math:
     def get_y(
@@ -110,21 +110,12 @@ interface Math:
         xp: DynArray[uint256, MAX_COINS],
         _amp: uint256,
         _D: uint256,
-        _n_coins: uint256
+        _n_coins: uint256,
     ) -> uint256: view
-    def get_y_D(
-        A: uint256,
-        i: int128,
-        xp: DynArray[uint256, MAX_COINS],
-        D: uint256,
-        _n_coins: uint256
-    ) -> uint256: view
-    def get_D(
-        _xp: DynArray[uint256, MAX_COINS],
-        _amp: uint256,
-        _n_coins: uint256
-    ) -> uint256: view
+    def get_y_D(A: uint256, i: int128, xp: DynArray[uint256, MAX_COINS], D: uint256, _n_coins: uint256) -> uint256: view
+    def get_D(_xp: DynArray[uint256, MAX_COINS], _amp: uint256, _n_coins: uint256) -> uint256: view
     def exp(x: int256) -> uint256: view
+
 
 # --------------------------------- Events -----------------------------------
 
@@ -133,10 +124,12 @@ event Transfer:
     receiver: indexed(address)
     value: uint256
 
+
 event Approval:
     owner: indexed(address)
     spender: indexed(address)
     value: uint256
+
 
 event TokenExchange:
     buyer: indexed(address)
@@ -145,12 +138,14 @@ event TokenExchange:
     bought_id: int128
     tokens_bought: uint256
 
+
 event TokenExchangeUnderlying:
     buyer: indexed(address)
     sold_id: int128
     tokens_sold: uint256
     bought_id: int128
     tokens_bought: uint256
+
 
 event AddLiquidity:
     provider: indexed(address)
@@ -159,11 +154,13 @@ event AddLiquidity:
     invariant: uint256
     token_supply: uint256
 
+
 event RemoveLiquidity:
     provider: indexed(address)
     token_amounts: DynArray[uint256, MAX_COINS]
     fees: DynArray[uint256, MAX_COINS]
     token_supply: uint256
+
 
 event RemoveLiquidityOne:
     provider: indexed(address)
@@ -172,6 +169,7 @@ event RemoveLiquidityOne:
     coin_amount: uint256
     token_supply: uint256
 
+
 event RemoveLiquidityImbalance:
     provider: indexed(address)
     token_amounts: DynArray[uint256, MAX_COINS]
@@ -179,19 +177,23 @@ event RemoveLiquidityImbalance:
     invariant: uint256
     token_supply: uint256
 
+
 event RampA:
     old_A: uint256
     new_A: uint256
     initial_time: uint256
     future_time: uint256
 
+
 event StopRampA:
     A: uint256
     t: uint256
 
+
 event ApplyNewFee:
     fee: uint256
     offpeg_fee_multiplier: uint256
+
 
 event SetNewMATime:
     ma_exp_time: uint256
@@ -206,7 +208,7 @@ MAX_METAPOOL_COIN_INDEX: constant(int128) = 1
 
 N_COINS: public(constant(uint256)) = 2
 N_COINS_128: constant(int128) = 2
-PRECISION: constant(uint256) = 10 ** 18
+PRECISION: constant(uint256) = 10**18
 
 BASE_POOL: public(immutable(address))
 BASE_POOL_IS_NG: immutable(bool)
@@ -221,16 +223,16 @@ pool_contains_rebasing_tokens: immutable(bool)
 stored_balances: uint256[N_COINS]
 
 # Fee specific vars
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
+FEE_DENOMINATOR: constant(uint256) = 10**10
 fee: public(uint256)  # fee * 1e10
 offpeg_fee_multiplier: public(uint256)  # * 1e10
 admin_fee: public(constant(uint256)) = 5000000000
-MAX_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_FEE: constant(uint256) = 5 * 10**9
 
 # ---------------------- Pool Amplification Parameters -----------------------
 
 A_PRECISION: constant(uint256) = 100
-MAX_A: constant(uint256) = 10 ** 6
+MAX_A: constant(uint256) = 10**6
 MAX_A_CHANGE: constant(uint256) = 10
 
 initial_A: public(uint256)
@@ -253,11 +255,11 @@ rate_oracle: immutable(uint256)  # this is the rate oracle for the token at 0th 
 call_amount: immutable(uint256)
 scale_factor: immutable(uint256)
 
-last_prices_packed: uint256                       #  packing: last_price, ma_price
-last_D_packed: uint256                            #  packing: last_D, ma_D
+last_prices_packed: uint256  #  packing: last_price, ma_price
+last_D_packed: uint256  #  packing: last_D, ma_D
 ma_exp_time: public(uint256)
 D_ma_time: public(uint256)
-ma_last_time: public(uint256)                     # packing: ma_last_time_p, ma_last_time_D
+ma_last_time: public(uint256)  # packing: ma_last_time_p, ma_last_time_D
 
 # shift(2**32 - 1, 224)
 ORACLE_BIT_MASK: constant(uint256) = (2**32 - 1) * 256**28
@@ -276,8 +278,12 @@ nonces: public(HashMap[address, uint256])
 
 # keccak256("isValidSignature(bytes32,bytes)")[:4] << 224
 ERC1271_MAGIC_VAL: constant(bytes32) = 0x1626ba7e00000000000000000000000000000000000000000000000000000000
-EIP712_TYPEHASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)")
-EIP2612_TYPEHASH: constant(bytes32) = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
+EIP712_TYPEHASH: constant(bytes32) = keccak256(
+    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)"
+)
+EIP2612_TYPEHASH: constant(bytes32) = keccak256(
+    "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+)
 
 VERSION_HASH: constant(bytes32) = keccak256(version)
 NAME_HASH: immutable(bytes32)
@@ -356,11 +362,7 @@ def __init__(
         if i < BASE_N_COINS:
             # Approval needed for add_liquidity operation on base pool in
             # _exchange_underlying:
-            assert ERC20(_base_coins[i]).approve(
-                BASE_POOL,
-                max_value(uint256),
-                default_return_value = True
-            )
+            assert ERC20(_base_coins[i]).approve(BASE_POOL, max_value(uint256), default_return_value=True)
 
     # For ERC4626 tokens:
     if asset_type == 3:
@@ -370,7 +372,9 @@ def __init__(
         call_amount = 10**convert(ERC20Detailed(_coins[0]).decimals(), uint256)
         scale_factor = 10**(18 - convert(ERC20Detailed(ERC4626(_coins[0]).asset()).decimals(), uint256))
 
+
     # ----------------- Parameters independent of pool type ------------------
+
 
     factory = Factory(msg.sender)
 
@@ -443,7 +447,6 @@ def _transfer_in(
 
     # Check if _transfer_in is being called by _exchange_underlying:
     if coin_basepool_idx >= 0 and coin_metapool_idx == 1:
-
         _input_coin = ERC20(BASE_COINS[coin_basepool_idx])
         _input_coin_is_in_base_pool = True
 
@@ -452,35 +455,32 @@ def _transfer_in(
     # ------------------------- Handle Transfers -----------------------------
 
     if expect_optimistic_transfer:
-
         if not _input_coin_is_in_base_pool:
             _dx = _dx - self.stored_balances[coin_metapool_idx]
             assert _dx >= dx  # dev: pool did not receive tokens for swap
-
     else:
-
         assert dx > 0  # dev : do not transferFrom 0 tokens into the pool
-        assert _input_coin.transferFrom(
-            sender,
-            self,
-            dx,
-            default_return_value=True
-        )
+        assert _input_coin.transferFrom(sender, self, dx, default_return_value=True)
         _dx = _input_coin.balanceOf(self) - _dx
 
+
     # ------------ Check if liquidity needs to be added somewhere ------------
+
 
     if _input_coin_is_in_base_pool:
         if is_base_pool_swap:
             return _dx  # <----- _exchange_underlying: all input goes to swap.
             # So, we will not increment self.stored_balances for metapool_idx.
 
+
         # Swap involves base <> meta pool interaction. Add incoming base pool
         # token to the base pool, mint _dx base pool LP token (idx 1) and add
         # that to self.stored_balances and return that instead.
         _dx = self._meta_add_liquidity(_dx, coin_basepool_idx)
 
+
     # ----------------------- Update Stored Balances -------------------------
+
 
     self.stored_balances[coin_metapool_idx] += _dx
 
@@ -488,9 +488,7 @@ def _transfer_in(
 
 
 @internal
-def _transfer_out(
-    _coin_idx: int128, _amount: uint256, receiver: address
-):
+def _transfer_out(_coin_idx: int128, _amount: uint256, receiver: address):
     """
     @notice Transfer a single token from the pool to receiver.
     @dev This function is called by `remove_liquidity` and
@@ -506,17 +504,13 @@ def _transfer_out(
 
         # we need not cache balanceOf pool before swap out
         self.stored_balances[_coin_idx] -= _amount
-        assert ERC20(coins[_coin_idx]).transfer(
-            receiver, _amount, default_return_value=True
-        )
+        assert ERC20(coins[_coin_idx]).transfer(receiver, _amount, default_return_value=True)
 
     else:
 
         # cache balances pre and post to account for fee on transfers etc.
         coin_balance: uint256 = ERC20(coins[_coin_idx]).balanceOf(self)
-        assert ERC20(coins[_coin_idx]).transfer(
-            receiver, _amount, default_return_value=True
-        )
+        assert ERC20(coins[_coin_idx]).transfer(receiver, _amount, default_return_value=True)
         self.stored_balances[_coin_idx] = coin_balance - _amount
 
 
@@ -553,8 +547,7 @@ def _stored_rates() -> uint256[N_COINS]:
 
         # rates[0] * fetched_rate / PRECISION
         rates[0] = unsafe_div(
-            rates[0] * ERC4626(coins[0]).convertToAssets(call_amount) * scale_factor,
-            PRECISION
+            rates[0] * ERC4626(coins[0]).convertToAssets(call_amount) * scale_factor, PRECISION
         )  # 1e18 precision
 
     return rates
@@ -574,14 +567,12 @@ def _balances() -> uint256[N_COINS]:
     result: uint256[N_COINS] = empty(uint256[N_COINS])
     admin_balances: DynArray[uint256, MAX_COINS] = self.admin_balances
     for i in range(N_COINS_128):
-
         if pool_contains_rebasing_tokens:
             # Read balances by gulping to account for rebases
             result[i] = ERC20(coins[i]).balanceOf(self) - admin_balances[i]
         else:
             # Use cached balances
             result[i] = self.stored_balances[i] - admin_balances[i]
-
     return result
 
 
@@ -589,7 +580,7 @@ def _balances() -> uint256[N_COINS]:
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def exchange(
     i: int128,
     j: int128,
@@ -607,19 +598,11 @@ def exchange(
     @param _receiver Address that receives `j`
     @return Actual amount of `j` received
     """
-    return self._exchange(
-        msg.sender,
-        i,
-        j,
-        _dx,
-        _min_dy,
-        _receiver,
-        False
-    )
+    return self._exchange(msg.sender, i, j, _dx, _min_dy, _receiver, False)
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def exchange_received(
     i: int128,
     j: int128,
@@ -655,7 +638,7 @@ def exchange_received(
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def exchange_underlying(
     i: int128,
     j: int128,
@@ -676,7 +659,7 @@ def exchange_underlying(
 
     rates: uint256[N_COINS] = self._stored_rates()
     old_balances: uint256[N_COINS] = self._balances()
-    xp: uint256[N_COINS]  = self._xp_mem(rates, old_balances)
+    xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
 
     dy: uint256 = 0
     base_i: int128 = 0
@@ -693,6 +676,7 @@ def exchange_underlying(
         base_i = i - MAX_METAPOOL_COIN_INDEX
         meta_i = 1
 
+
     # Get output coin and indices:
     if j == 0:
         output_coin = coins[0]
@@ -701,11 +685,9 @@ def exchange_underlying(
         meta_j = 1
         output_coin = BASE_COINS[base_j]
 
-    # --------------------------- Do Transfer in -----------------------------
 
-    # If incoming coin is supposed to go to the base pool, the _transfer_in
-    # method will add_liquidity in the base pool and return dx_w_fee LP tokens
-    dx_w_fee: uint256 =  self._transfer_in(
+    # --------------------------- Do Transfer in -----------------------------
+    dx_w_fee: uint256 = self._transfer_in(
         meta_i,
         base_i,
         _dx,
@@ -717,7 +699,6 @@ def exchange_underlying(
     # ------------------------------- Exchange -------------------------------
 
     if i == 0 or j == 0:  # meta swap
-
         x = xp[meta_i] + unsafe_div(dx_w_fee * rates[meta_i], PRECISION)
         dy = self.__exchange(x, xp, rates, meta_i, meta_j)
 
@@ -733,12 +714,13 @@ def exchange_underlying(
         assert dy >= _min_dy
 
     else:  # base pool swap (user should swap at base pool for better gas)
-
         dy = ERC20(output_coin).balanceOf(self)
         StableSwap(BASE_POOL).exchange(base_i, base_j, dx_w_fee, _min_dy)
         dy = ERC20(output_coin).balanceOf(self) - dy
 
+
     # --------------------------- Do Transfer out ----------------------------
+
 
     assert ERC20(output_coin).transfer(_receiver, dy, default_return_value=True)
 
@@ -750,12 +732,8 @@ def exchange_underlying(
 
 
 @external
-@nonreentrant('lock')
-def add_liquidity(
-    _amounts: uint256[N_COINS],
-    _min_mint_amount: uint256,
-    _receiver: address = msg.sender
-) -> uint256:
+@nonreentrant("lock")
+def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _receiver: address = msg.sender) -> uint256:
     """
     @notice Deposit coins into the pool
     @param _amounts List of amounts of coins to deposit
@@ -778,24 +756,18 @@ def add_liquidity(
     # -------------------------- Do Transfers In -----------------------------
 
     for i in range(N_COINS_128):
-
         if _amounts[i] > 0:
-
             new_balances[i] += self._transfer_in(
-                i,
-                -1,  # <--- we're not handling underlying coins here
+                i, -1,  # <--- we're not handling underlying coins here
                 _amounts[i],
                 msg.sender,
                 False,  # expect_optimistic_transfer
             )
 
         else:
-
             assert total_supply != 0  # dev: initial deposit requires all coins
 
     # ------------------------------------------------------------------------
-
-    # Invariant after change
     D1: uint256 = self.get_D_mem(rates, new_balances, amp)
     assert D1 > D0
 
@@ -805,7 +777,6 @@ def add_liquidity(
     mint_amount: uint256 = 0
 
     if total_supply > 0:
-
         ideal_balance: uint256 = 0
         difference: uint256 = 0
         new_balance: uint256 = 0
@@ -820,7 +791,6 @@ def add_liquidity(
         base_fee: uint256 = unsafe_div(unsafe_mul(self.fee, N_COINS), 4)
 
         for i in range(N_COINS_128):
-
             ideal_balance = D1 * old_balances[i] / D0
             new_balance = new_balances[i]
 
@@ -829,6 +799,7 @@ def add_liquidity(
                 difference = unsafe_sub(ideal_balance, new_balance)
             else:
                 difference = unsafe_sub(new_balance, ideal_balance)
+
 
             # fee[i] = _dynamic_fee(i, j) * difference / FEE_DENOMINATOR
             xs = unsafe_div(rates[i] * (old_balances[i] + new_balance), PRECISION)
@@ -846,7 +817,6 @@ def add_liquidity(
         self.upkeep_oracles(xp, amp, D1)
 
     else:
-
         mint_amount = D1  # Take the dust if there was any
 
         # (re)instantiate D oracle if totalSupply is zero.
@@ -857,7 +827,6 @@ def add_liquidity(
         if ma_last_time_unpacked[1] < block.timestamp:
             ma_last_time_unpacked[1] = block.timestamp
             self.ma_last_time = self.pack_2(ma_last_time_unpacked[0], ma_last_time_unpacked[1])
-
     assert mint_amount >= _min_mint_amount, "Slippage screwed you"
 
     # Mint pool tokens
@@ -871,19 +840,13 @@ def add_liquidity(
     self.total_supply = total_supply
     log Transfer(empty(address), _receiver, mint_amount)
 
-    log AddLiquidity(
-        msg.sender,
-        [_amounts[0], _amounts[1]],
-        [fees[0], fees[1]],
-        D1,
-        total_supply
-    )
+    log AddLiquidity(msg.sender, [_amounts[0], _amounts[1]], [fees[0], fees[1]], D1, total_supply)
 
     return mint_amount
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity_one_coin(
     _burn_amount: uint256,
     i: int128,
@@ -924,11 +887,9 @@ def remove_liquidity_one_coin(
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity_imbalance(
-    _amounts: uint256[N_COINS],
-    _max_burn_amount: uint256,
-    _receiver: address = msg.sender
+    _amounts: uint256[N_COINS], _max_burn_amount: uint256, _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -945,11 +906,9 @@ def remove_liquidity_imbalance(
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS_128):
-
         if _amounts[i] != 0:
             new_balances[i] -= _amounts[i]
             self._transfer_out(i, _amounts[i], _receiver)
-
     D1: uint256 = self.get_D_mem(rates, new_balances, amp)
     # base_fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     base_fee: uint256 = unsafe_div(unsafe_mul(self.fee, N_COINS), 4)
@@ -964,7 +923,6 @@ def remove_liquidity_imbalance(
     new_balance: uint256 = 0
 
     for i in range(N_COINS_128):
-
         ideal_balance = D1 * old_balances[i] / D0
         new_balance = new_balances[i]
 
@@ -972,6 +930,7 @@ def remove_liquidity_imbalance(
             difference = unsafe_sub(ideal_balance, new_balance)
         else:
             difference = unsafe_sub(new_balance, ideal_balance)
+
 
         # base_fee * difference / FEE_DENOMINATOR
         xs = unsafe_div(rates[i] * (old_balances[i] + new_balance), PRECISION)
@@ -996,18 +955,14 @@ def remove_liquidity_imbalance(
     self._burnFrom(msg.sender, burn_amount)
 
     log RemoveLiquidityImbalance(
-        msg.sender,
-        [_amounts[0], _amounts[1]],
-        [fees[0], fees[1]],
-        D1,
-        total_supply - burn_amount
+        msg.sender, [_amounts[0], _amounts[1]], [fees[0], fees[1]], D1, total_supply - burn_amount
     )
 
     return burn_amount
 
 
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def remove_liquidity(
     _burn_amount: uint256,
     _min_amounts: uint256[N_COINS],
@@ -1030,7 +985,6 @@ def remove_liquidity(
     value: uint256 = 0
 
     for i in range(N_COINS_128):
-
         value = unsafe_div(balances[i] * _burn_amount, total_supply)
         assert value >= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         amounts[i] = value
@@ -1046,24 +1000,22 @@ def remove_liquidity(
 
     self.last_D_packed = self.pack_2(
         old_D - unsafe_div(old_D * _burn_amount, total_supply),  # new_D = proportionally reduce D.
-        self._calc_moving_average(
-            last_D_packed_current,
-            self.D_ma_time,
-            ma_last_time_unpacked[1]
-        )
+        self._calc_moving_average(last_D_packed_current, self.D_ma_time, ma_last_time_unpacked[1]),
     )
 
     if ma_last_time_unpacked[1] < block.timestamp:
         ma_last_time_unpacked[1] = block.timestamp
         self.ma_last_time = self.pack_2(ma_last_time_unpacked[0], ma_last_time_unpacked[1])
 
+
     # ------------------------------- Log event ------------------------------
+
 
     log RemoveLiquidity(
         msg.sender,
         [amounts[0], amounts[1]],
         empty(DynArray[uint256, MAX_COINS]),
-        unsafe_sub(total_supply, _burn_amount)
+        unsafe_sub(total_supply, _burn_amount),
     )
 
     # ------- Withdraw admin fees if _claim_admin_fees is set to True --------
@@ -1088,20 +1040,16 @@ def withdraw_admin_fees():
 @view
 @internal
 def _dynamic_fee(xpi: uint256, xpj: uint256, _fee: uint256) -> uint256:
-
     _offpeg_fee_multiplier: uint256 = self.offpeg_fee_multiplier
 
     # to remove dynamic fee: just set _offpeg_fee_multiplier less than FEE_DENOMINATOR
     if _offpeg_fee_multiplier <= FEE_DENOMINATOR:
         return _fee
 
-    xps2: uint256 = (xpi + xpj) ** 2
+    xps2: uint256 = (xpi + xpj)**2
     return unsafe_div(
         unsafe_mul(_offpeg_fee_multiplier, _fee),
-        unsafe_add(
-            unsafe_sub(_offpeg_fee_multiplier, FEE_DENOMINATOR) * 4 * xpi * xpj / xps2,
-            FEE_DENOMINATOR
-        )
+        unsafe_add(unsafe_sub(_offpeg_fee_multiplier, FEE_DENOMINATOR) * 4 * xpi * xpj / xps2, FEE_DENOMINATOR),
     )
 
 
@@ -1113,17 +1061,13 @@ def __exchange(
     i: int128,
     j: int128,
 ) -> uint256:
-
     amp: uint256 = self._A()
     D: uint256 = math.get_D([_xp[0], _xp[1]], amp, N_COINS)
     y: uint256 = math.get_y(i, j, x, [_xp[0], _xp[1]], amp, D, N_COINS)
 
     dy: uint256 = _xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = unsafe_div(
-        dy * self._dynamic_fee(
-            unsafe_div(_xp[i] + x, 2), unsafe_div(_xp[j] + y, 2), self.fee
-        ),
-        FEE_DENOMINATOR
+        dy * self._dynamic_fee(unsafe_div(_xp[i] + x, 2), unsafe_div(_xp[j] + y, 2), self.fee), FEE_DENOMINATOR
     )
 
     # Convert all to real units
@@ -1132,7 +1076,7 @@ def __exchange(
     # admin_fee = dy_fee * admin_fee / FEE_DENOMINATOR
     self.admin_balances[j] += unsafe_div(
         unsafe_div(dy_fee * admin_fee, FEE_DENOMINATOR) * PRECISION,
-        rates[j]  # we can do unsafediv here because we did safediv before
+        rates[j],  # we can do unsafediv here because we did safediv before
     )
 
     # Calculate and store state prices:
@@ -1153,9 +1097,8 @@ def _exchange(
     _dx: uint256,
     _min_dy: uint256,
     receiver: address,
-    expect_optimistic_transfer: bool
+    expect_optimistic_transfer: bool,
 ) -> uint256:
-
     assert i != j  # dev: coin index out of range
     assert _dx > 0  # dev: do not exchange 0 coins
 
@@ -1166,13 +1109,7 @@ def _exchange(
     # --------------------------- Do Transfer in -----------------------------
 
     # `dx` is whatever the pool received after ERC20 transfer:
-    dx: uint256 = self._transfer_in(
-        i,
-        -1,
-        _dx,
-        sender,
-        expect_optimistic_transfer
-    )
+    dx: uint256 = self._transfer_in(i, -1, _dx, sender, expect_optimistic_transfer)
 
     # ------------------------------- Exchange -------------------------------
 
@@ -1194,9 +1131,7 @@ def _exchange(
 
 @internal
 def _meta_add_liquidity(dx: uint256, base_i: int128) -> uint256:
-
     if BASE_POOL_IS_NG:
-
         base_inputs: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
         for i in range(BASE_N_COINS, bound=MAX_COINS):
             if i == convert(base_i, uint256):
@@ -1209,13 +1144,11 @@ def _meta_add_liquidity(dx: uint256, base_i: int128) -> uint256:
     x: uint256 = ERC20(coin_i).balanceOf(self)
 
     if BASE_N_COINS == 2:
-
         base_inputs: uint256[2] = empty(uint256[2])
         base_inputs[base_i] = dx
         StableSwap2(BASE_POOL).add_liquidity(base_inputs, 0)
 
     if BASE_N_COINS == 3:
-
         base_inputs: uint256[3] = empty(uint256[3])
         base_inputs[base_i] = dx
         StableSwap3(BASE_POOL).add_liquidity(base_inputs, 0)
@@ -1225,17 +1158,14 @@ def _meta_add_liquidity(dx: uint256, base_i: int128) -> uint256:
 
 @internal
 def _withdraw_admin_fees():
-
     fee_receiver: address = factory.fee_receiver()
     if fee_receiver == empty(address):
         return  # Do nothing.
 
     admin_balances: DynArray[uint256, MAX_COINS] = self.admin_balances
     for i in range(N_COINS_128):
-
         if admin_balances[i] > 0:
             self._transfer_out(i, admin_balances[i], fee_receiver)
-
     self.admin_balances = [0, 0]
 
 
@@ -1259,7 +1189,6 @@ def _A() -> uint256:
             return A0 + unsafe_sub(A1, A0) * (block.timestamp - t0) / (t1 - t0)
         else:
             return A0 - unsafe_sub(A0, A1) * (block.timestamp - t0) / (t1 - t0)
-
     else:  # when t1 == 0 or block.timestamp >= t1
         return A1
 
@@ -1267,7 +1196,6 @@ def _A() -> uint256:
 @pure
 @internal
 def _xp_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-
     result: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS_128):
         # _rates[i] * _balances[i] / PRECISION
@@ -1278,27 +1206,14 @@ def _xp_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_
 
 @view
 @internal
-def get_D_mem(
-    _rates: uint256[N_COINS],
-    _balances: uint256[N_COINS],
-    _amp: uint256
-) -> uint256:
+def get_D_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS], _amp: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp_mem(_rates, _balances)
     return math.get_D([xp[0], xp[1]], _amp, N_COINS)
 
 
 @view
 @internal
-def _calc_withdraw_one_coin(
-    _burn_amount: uint256,
-    i: int128
-) -> (
-    uint256,
-    uint256,
-    uint256[N_COINS],
-    uint256,
-    uint256
-):
+def _calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> (uint256, uint256, uint256[N_COINS], uint256, uint256):
 
     # First, need to:
     # * Get current D
@@ -1326,7 +1241,6 @@ def _calc_withdraw_one_coin(
     dynamic_fee: uint256 = 0
 
     for j in range(N_COINS_128):
-
         dx_expected = 0
         xp_j = xp[j]
         if j == i:
@@ -1335,6 +1249,7 @@ def _calc_withdraw_one_coin(
         else:
             dx_expected = xp_j - xp_j * D1 / D0
             xavg = xp_j
+
 
         # xp_j - dynamic_fee * dx_expected / FEE_DENOMINATOR
         dynamic_fee = self._dynamic_fee(xavg, ys, base_fee)
@@ -1381,6 +1296,7 @@ def _get_p(
     for i in range(N_COINS_128):
         Dr = Dr * D / xp[i]
 
+
     # ANN * xp[0] / A_PRECISION
     xp0_A: uint256 = unsafe_div(ANN * xp[0], A_PRECISION)
     return 10**18 * (xp0_A + unsafe_div(Dr * xp[0], xp[1])) / (xp0_A + Dr)
@@ -1409,7 +1325,7 @@ def upkeep_oracles(xp: uint256[N_COINS], amp: uint256, D: uint256):
                 last_prices_packed_current,
                 self.ma_exp_time,
                 ma_last_time_unpacked[0],  # index 0 is ma_exp_time for prices
-            )
+            ),
         )
 
     self.last_prices_packed = last_prices_packed_new
@@ -1422,25 +1338,19 @@ def upkeep_oracles(xp: uint256[N_COINS], amp: uint256, D: uint256):
             self.last_D_packed,
             self.D_ma_time,
             ma_last_time_unpacked[1],  # index 1 is ma_exp_time for D
-        )
+        ),
     )
 
     # Housekeeping: Update ma_last_time for p and D oracles ------------------
     for i in range(2):
         if ma_last_time_unpacked[i] < block.timestamp:
             ma_last_time_unpacked[i] = block.timestamp
-
     self.ma_last_time = self.pack_2(ma_last_time_unpacked[0], ma_last_time_unpacked[1])
 
 
 @internal
 @view
-def _calc_moving_average(
-    packed_value: uint256,
-    averaging_window: uint256,
-    ma_last_time: uint256
-) -> uint256:
-
+def _calc_moving_average(packed_value: uint256, averaging_window: uint256, ma_last_time: uint256) -> uint256:
     last_spot_value: uint256 = packed_value & (2**128 - 1)
     last_ema_value: uint256 = (packed_value >> 128)
 
@@ -1481,16 +1391,14 @@ def get_p(i: uint256) -> uint256:
     assert i == 0  # dev: metapools do not have get_p indices greater than 0.
 
     amp: uint256 = self._A()
-    xp: uint256[N_COINS] = self._xp_mem(
-        self._stored_rates(), self._balances()
-    )
+    xp: uint256[N_COINS] = self._xp_mem(self._stored_rates(), self._balances())
     D: uint256 = math.get_D([xp[0], xp[1]], amp, N_COINS)
     return self._get_p(xp, amp, D)
 
 
 @external
 @view
-@nonreentrant('lock')
+@nonreentrant("lock")
 def price_oracle(i: uint256) -> uint256:
     assert i == 0  # dev: metapools do not have price_oracle indices greater than 0.
     return self._calc_moving_average(
@@ -1502,13 +1410,9 @@ def price_oracle(i: uint256) -> uint256:
 
 @external
 @view
-@nonreentrant('lock')
+@nonreentrant("lock")
 def D_oracle() -> uint256:
-    return self._calc_moving_average(
-        self.last_D_packed,
-        self.D_ma_time,
-        self.ma_last_time >> 128
-    )
+    return self._calc_moving_average(self.last_D_packed, self.D_ma_time, self.ma_last_time >> 128)
 
 
 # ---------------------------- ERC20 Utils -----------------------------------
@@ -1543,14 +1447,13 @@ def _transfer(_from: address, _to: address, _value: uint256):
 
 @internal
 def _burnFrom(_from: address, _burn_amount: uint256):
-
     self.total_supply -= _burn_amount
     self.balanceOf[_from] -= _burn_amount
     log Transfer(_from, empty(address), _burn_amount)
 
 
 @external
-def transfer(_to : address, _value : uint256) -> bool:
+def transfer(_to: address, _value: uint256) -> bool:
     """
     @dev Transfer token for a specified address
     @param _to The address to transfer to.
@@ -1561,12 +1464,12 @@ def transfer(_to : address, _value : uint256) -> bool:
 
 
 @external
-def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+def transferFrom(_from: address, _to: address, _value: uint256) -> bool:
     """
-     @dev Transfer tokens from one address to another.
-     @param _from address The address which you want to send tokens from
-     @param _to address The address which you want to transfer to
-     @param _value uint256 the amount of tokens to be transferred
+    @dev Transfer tokens from one address to another.
+    @param _from address The address which you want to send tokens from
+    @param _to address The address which you want to transfer to
+    @param _value uint256 the amount of tokens to be transferred
     """
     self._transfer(_from, _to, _value)
 
@@ -1580,7 +1483,7 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
 
 
 @external
-def approve(_spender : address, _value : uint256) -> bool:
+def approve(_spender: address, _value: uint256) -> bool:
     """
     @notice Approve the passed address to transfer the specified amount of
             tokens on behalf of msg.sender
@@ -1599,13 +1502,7 @@ def approve(_spender : address, _value : uint256) -> bool:
 
 @external
 def permit(
-    _owner: address,
-    _spender: address,
-    _value: uint256,
-    _deadline: uint256,
-    _v: uint8,
-    _r: bytes32,
-    _s: bytes32
+    _owner: address, _spender: address, _value: uint256, _deadline: uint256, _v: uint8, _r: bytes32, _s: bytes32
 ) -> bool:
     """
     @notice Approves spender by owner's signature to expend owner's tokens.
@@ -1630,7 +1527,7 @@ def permit(
         concat(
             b"\x19\x01",
             self._domain_separator(),
-            keccak256(_abi_encode(EIP2612_TYPEHASH, _owner, _spender, _value, nonce, _deadline))
+            keccak256(_abi_encode(EIP2612_TYPEHASH, _owner, _spender, _value, nonce, _deadline)),
         )
     )
 
@@ -1733,7 +1630,7 @@ def calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256:
 
 @view
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def totalSupply() -> uint256:
     """
     @notice The total supply of pool LP tokens
@@ -1744,7 +1641,7 @@ def totalSupply() -> uint256:
 
 @view
 @external
-@nonreentrant('lock')
+@nonreentrant("lock")
 def get_virtual_price() -> uint256:
     """
     @notice The current virtual price of the pool LP token
@@ -1762,10 +1659,7 @@ def get_virtual_price() -> uint256:
 
 @view
 @external
-def calc_token_amount(
-    _amounts: uint256[N_COINS],
-    _is_deposit: bool
-) -> uint256:
+def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
     """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @param _amounts Amount of each coin being deposited
@@ -1773,9 +1667,7 @@ def calc_token_amount(
     @return Expected amount of LP tokens received
     """
     return StableSwapViews(factory.views_implementation()).calc_token_amount(
-        [_amounts[0], _amounts[1]],
-        _is_deposit,
-        self
+        [_amounts[0], _amounts[1]], _is_deposit, self
     )
 
 
@@ -1871,7 +1763,6 @@ def stop_ramp_A():
 
 @external
 def set_new_fee(_new_fee: uint256, _new_offpeg_fee_multiplier: uint256):
-
     assert msg.sender == factory.admin()
 
     # set new fee:

@@ -14,19 +14,23 @@ event TransactionExecuted:
     calldata: Bytes[100000]
     value: uint256
 
+
 event RequestAdminChange:
     current_admin: address
     future_admin: address
+
 
 event RevokeAdminChange:
     current_admin: address
     future_admin: address
     calling_admin: address
 
+
 event ApproveAdminChange:
     current_admin: address
     future_admin: address
     calling_admin: address
+
 
 event AcceptAdminChange:
     previous_admin: address
@@ -97,7 +101,6 @@ def request_admin_change(_new_admin: address):
             self.pending_new_admin = _new_admin
             log RequestAdminChange(msg.sender, _new_admin)
             return
-
     raise  # dev: only admin
 
 
@@ -135,7 +138,6 @@ def revoke_admin_change():
     self.pending_current_admin = 0
     self.pending_new_admin = ZERO_ADDRESS
     self.change_approved = False
-
 
 
 @external

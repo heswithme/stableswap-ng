@@ -32,13 +32,7 @@ asset_type: public(constant(uint8)) = 1
 
 
 @external
-def __init__(
-    _name: String[64],
-    _symbol: String[32],
-    _decimals: uint256,
-    _exchange_rate: uint256
-):
-
+def __init__(_name: String[64], _symbol: String[32], _decimals: uint256, _exchange_rate: uint256):
     self.name = _name
     self.symbol = _symbol
 

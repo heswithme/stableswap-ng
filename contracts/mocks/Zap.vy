@@ -5,6 +5,7 @@
 @license Copyright (c) Curve.Fi, 2021 - all rights reserved
 """
 
+
 interface ERC20:
     def transfer(_receiver: address, _amount: uint256): nonpayable
     def transferFrom(_sender: address, _receiver: address, _amount: uint256): nonpayable
@@ -12,14 +13,18 @@ interface ERC20:
     def decimals() -> uint256: view
     def balanceOf(_owner: address) -> uint256: view
 
+
 interface CurveMeta:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _receiver: address) -> uint256: nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]: nonpayable
-    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256, _receiver: address) -> uint256: nonpayable
+    def remove_liquidity_one_coin(
+        _token_amount: uint256, i: int128, min_amount: uint256, _receiver: address
+    ) -> uint256: nonpayable
     def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
+
 
 interface CurveBase:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
@@ -33,17 +38,17 @@ interface CurveBase:
 
 
 N_COINS: constant(uint256) = 2
-MAX_COIN: constant(uint256) = N_COINS-1
+MAX_COIN: constant(uint256) = N_COINS - 1
 BASE_N_COINS: constant(uint256) = 3
 N_ALL_COINS: constant(uint256) = N_COINS + BASE_N_COINS - 1
 
 N_COINS_128: constant(int128) = 2
-MAX_COIN_128: constant(int128) = N_COINS-1
+MAX_COIN_128: constant(int128) = N_COINS - 1
 BASE_N_COINS_128: constant(int128) = 3
 N_ALL_COINS_128: constant(int128) = N_COINS + BASE_N_COINS - 1
 
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
+FEE_DENOMINATOR: constant(uint256) = 10**10
+FEE_IMPRECISION: constant(uint256) = 100 * 10**8  # % of the fee
 
 BASE_POOL: immutable(address)
 BASE_LP_TOKEN: immutable(address)
@@ -126,10 +131,7 @@ def add_liquidity(
 
 @external
 def remove_liquidity(
-    _pool: address,
-    _burn_amount: uint256,
-    _min_amounts: uint256[N_ALL_COINS],
-    _receiver: address = msg.sender
+    _pool: address, _burn_amount: uint256, _min_amounts: uint256[N_ALL_COINS], _receiver: address = msg.sender
 ) -> uint256[N_ALL_COINS]:
     """
     @notice Withdraw and unwrap coins from the pool
@@ -147,13 +149,12 @@ def remove_liquidity(
 
     # Withdraw from meta
     meta_received: uint256[N_COINS] = CurveMeta(_pool).remove_liquidity(
-        _burn_amount,
-        [_min_amounts[0], convert(0, uint256)]
+        _burn_amount, [_min_amounts[0], convert(0, uint256)]
     )
 
     # Withdraw from base
     for i in range(BASE_N_COINS):
-        min_amounts_base[i] = _min_amounts[MAX_COIN+i]
+        min_amounts_base[i] = _min_amounts[MAX_COIN + i]
     CurveBase(BASE_POOL).remove_liquidity(meta_received[1], min_amounts_base)
 
     # Transfer all coins out
@@ -163,7 +164,7 @@ def remove_liquidity(
 
     base_coins: address[BASE_N_COINS] = BASE_COINS
     for i in range(1, N_ALL_COINS):
-        coin = base_coins[i-1]
+        coin = base_coins[i - 1]
         amounts[i] = ERC20(coin).balanceOf(self)
         ERC20(coin).transfer(_receiver, amounts[i])
 
@@ -172,11 +173,7 @@ def remove_liquidity(
 
 @external
 def remove_liquidity_one_coin(
-    _pool: address,
-    _burn_amount: uint256,
-    i: int128,
-    _min_amount: uint256,
-    _receiver: address=msg.sender
+    _pool: address, _burn_amount: uint256, i: int128, _min_amount: uint256, _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw and unwrap a single coin from the pool
@@ -197,7 +194,7 @@ def remove_liquidity_one_coin(
         coin: address = base_coins[i - MAX_COIN_128]
         # Withdraw a base pool coin
         coin_amount = CurveMeta(_pool).remove_liquidity_one_coin(_burn_amount, MAX_COIN_128, 0, self)
-        CurveBase(BASE_POOL).remove_liquidity_one_coin(coin_amount, i-MAX_COIN_128, _min_amount)
+        CurveBase(BASE_POOL).remove_liquidity_one_coin(coin_amount, i - MAX_COIN_128, _min_amount)
         coin_amount = ERC20(coin).balanceOf(self)
         ERC20(coin).transfer(_receiver, coin_amount)
 
@@ -206,10 +203,7 @@ def remove_liquidity_one_coin(
 
 @external
 def remove_liquidity_imbalance(
-    _pool: address,
-    _amounts: uint256[N_ALL_COINS],
-    _max_burn_amount: uint256,
-    _receiver: address=msg.sender
+    _pool: address, _amounts: uint256[N_ALL_COINS], _max_burn_amount: uint256, _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -242,6 +236,7 @@ def remove_liquidity_imbalance(
         amounts_meta[MAX_COIN] = CurveBase(BASE_POOL).calc_token_amount(amounts_base, False)
         amounts_meta[MAX_COIN] += amounts_meta[MAX_COIN] * fee / FEE_DENOMINATOR + 1
 
+
     # withdraw from metapool and return the remaining LP tokens
     burn_amount: uint256 = CurveMeta(_pool).remove_liquidity_imbalance(amounts_meta, _max_burn_amount)
     ERC20(_pool).transfer(msg.sender, _max_burn_amount - burn_amount)
@@ -258,6 +253,7 @@ def remove_liquidity_imbalance(
                 ERC20(coin).approve(_pool, MAX_UINT256)
                 self.is_approved[coin][_pool] = True
             burn_amount -= CurveMeta(_pool).add_liquidity([convert(0, uint256), leftover], 0, msg.sender)
+
 
         # transfer withdrawn base pool tokens to caller
         base_coins: address[BASE_N_COINS] = BASE_COINS
@@ -286,7 +282,7 @@ def calc_withdraw_one_coin(_pool: address, _token_amount: uint256, i: int128) ->
         return CurveMeta(_pool).calc_withdraw_one_coin(_token_amount, i)
     else:
         _base_tokens: uint256 = CurveMeta(_pool).calc_withdraw_one_coin(_token_amount, MAX_COIN_128)
-        return CurveBase(BASE_POOL).calc_withdraw_one_coin(_base_tokens, i-MAX_COIN_128)
+        return CurveBase(BASE_POOL).calc_withdraw_one_coin(_base_tokens, i - MAX_COIN_128)
 
 
 @view
