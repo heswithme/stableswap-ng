@@ -3,7 +3,6 @@ import pytest
 pytestmark = pytest.mark.usefixtures("initial_setup")
 
 
-@pytest.mark.only_meta_pool
 @pytest.mark.extensive_token_pairs
 @pytest.mark.parametrize("sending,receiving", [(0, 1), (1, 0)])
 # todo - rename into test_get_dy - because that's the main test goal
@@ -27,7 +26,7 @@ def test_min_dy(
     if pool_token_types[receiving] == pool_token_types[sending] == 2:
         pass
 
-    amount = 1000 * 10 ** decimals[sending]
+    amount = 1_000 * 10 ** decimals[sending]
 
     initial_receiving = (
         pool_tokens[receiving].balanceOf(bob) if pool_type == 0 else underlying_tokens[receiving].balanceOf(bob)
@@ -54,27 +53,15 @@ def test_min_dy(
         # we correct for expected min_dy (inflate it) by value of pool balances after transfer_in
         # min_dy is thus roughly inflated by token_in (now rebased) held by pool
         # approximate assert because of how min_dy is approximated
-        # 1a) token_out = plain
-        if pool_token_types[receiving] == 0:
-            # plain token_out, we may assume perfect pool balance, and approximation is precise
-            min_dy += (pool_balance_token_in) // 1000000  # that works because pool has equal balances more or less
-            assert receiving_token_diff == pytest.approx(min_dy, rel=0.01 / 100)  # 0.01% relative error
-
-        # 1b) token_out = oracle
-        elif pool_token_types[receiving] == 1:
-            # for oracle token_out pool isn't balanced because of exchange_rate, so we adjust testing proportionally
-            min_dy += (
-                pool_balance_token_in / (pool_tokens[receiving].exchange_rate() // pool_tokens[receiving].decimals())
-            ) // 1000000
-            # 3% relative error
-            assert receiving_token_diff == pytest.approx(min_dy, rel=3 / 100)
+        min_dy += (pool_balance_token_in) // 1000000  # that works because pool has equal balances more or less
+        assert receiving_token_diff == pytest.approx(min_dy, rel=0.01 / 100)  # 0.01% relative error
 
     elif pool_type == 0 and pool_token_types[receiving] == 2 and pool_token_types[sending] != 2:
         # 2) token_in = nonrebasing, token_out = rebasing
         # because pool doesn't assume dy to be rebasing, estimated min_dy is slightly less than
         # actual received dy (inflated upon transfer)
         # approximate assert handles this, absolute error not larger than single rebasing delta
-        assert receiving_token_diff == pytest.approx(min_dy, abs=final_receiving // 1000000)
+        assert receiving_token_diff == pytest.approx(min_dy, abs=final_receiving / 1000000)
 
     elif pool_type == 0 and pool_token_types[receiving] == pool_token_types[sending] == 2:
         # 3) token_in = rebasing, token_out = rebasing
@@ -100,6 +87,8 @@ def test_min_dy(
         assert abs(receiving_token_diff - min_dy) <= 1
 
 
+@pytest.mark.only_meta_pool
+@pytest.mark.extensive_token_pairs
 @pytest.mark.parametrize("sending,receiving", [(0, 1), (1, 0)])
 def test_min_dy_imbalanced(
     bob,
@@ -113,32 +102,36 @@ def test_min_dy_imbalanced(
     receiving,
     decimals,
 ):
-    amounts = [1_500_000 * 10**i for i in decimals]
-    scaler = amounts.copy()  # used to scale token amounts when decimals are different
+    print()
+    amounts = [500_000 * 10**i for i in decimals]
+    # scaler = amounts.copy()  # used to scale token amounts when decimals are different
+    amounts_add = amounts.copy()
+    amounts_add[sending] = 0
+    amounts_add[receiving] = amounts[receiving]
 
-    amounts[sending] = 0
-    amounts[receiving] = amounts[receiving]
+    swap.add_liquidity(amounts_add, 0, sender=bob)
+    # pool state is unbalanced - it has some token_in (sending) from initializations and a lot of token_out (receiving)
+    assert swap.balances(receiving) > swap.balances(sending)
 
-    swap.add_liquidity(amounts, 0, sender=bob)
-
-    # oracle
+    # oracle tokens  case
     rate = 1
     if pool_type == 0:
         if pool_token_types[sending] == 1:
-            rate = rate / (pool_tokens[sending].exchangeRate() / 10**18)
+            rate = rate / (pool_tokens[sending].exchangeRate() / 10 ** pool_tokens[sending].decimals())
         if pool_token_types[receiving] == 1:
-            rate = rate * (pool_tokens[receiving].exchangeRate() / 10**18)
+            rate = rate * (pool_tokens[receiving].exchangeRate() / 10 ** pool_tokens[receiving].decimals())
 
     elif pool_type == 1:
         if metapool_token_type == 1:
-            if sending == 0:
+            if sending == 0:  # token_in is oracle
                 rate = rate / (underlying_tokens[0].exchangeRate() / 10**18)
-
-            if receiving == 0:
+            else:  # token_out is oracle
                 rate = rate * (underlying_tokens[0].exchangeRate() / 10**18)
-
     # we need to scale these appropriately for tokens with different decimal values
-    min_dy_sending = swap.get_dy(sending, receiving, scaler[sending]) / scaler[receiving]
-    min_dy_receiving = swap.get_dy(receiving, sending, scaler[receiving]) / scaler[sending]
-
-    assert min_dy_sending * rate > min_dy_receiving
+    # (# no such worries for now, 18 decimals everywhere)
+    # min_dy_sending - send scarcer asset, receive more abundant asset
+    min_dy_sending = swap.get_dy(sending, receiving, amounts[sending])  # / scaler[receiving]
+    # min_dy_receiving - send more abundant asset receive scarcer asset,
+    min_dy_receiving = swap.get_dy(receiving, sending, amounts[receiving])  # / scaler[sending]
+    # min_dy_sending must be more than min_dy_receiving
+    assert min_dy_sending * rate > min_dy_receiving / rate  # Q? why / rate? need to think more about this
