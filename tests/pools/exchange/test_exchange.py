@@ -87,7 +87,7 @@ def test_min_dy(
         assert abs(receiving_token_diff - min_dy) <= 1
 
 
-@pytest.mark.only_meta_pool
+# @pytest.mark.only_meta_pool
 @pytest.mark.extensive_token_pairs
 @pytest.mark.parametrize("sending,receiving", [(0, 1), (1, 0)])
 def test_min_dy_imbalanced(
@@ -102,36 +102,41 @@ def test_min_dy_imbalanced(
     receiving,
     decimals,
 ):
-    print()
-    amounts = [500_000 * 10**i for i in decimals]
-    # scaler = amounts.copy()  # used to scale token amounts when decimals are different
-    amounts_add = amounts.copy()
-    amounts_add[sending] = 0
-    amounts_add[receiving] = amounts[receiving]
+    # @note - this test has lots of edge-cases, we need to consider rebase effects, oracle rates, etc.
+    # however, we assume that pool imbalance is so high, that it will always dominate these effects
+    # for this reason we do not consider them all in this test, as in 'balanced' test above
 
+    # amount to add and to swap, should be large enough
+    amount = min([swap.balances(i) for i in range(2)])  # min max not critical here
+
+    # imbalance is always towards token_out, so we always get more token_out than token_in
+    amounts_add = [0, 0]
+    amounts_add[sending] = 0
+    amounts_add[receiving] = amount
     swap.add_liquidity(amounts_add, 0, sender=bob)
+
     # pool state is unbalanced - it has some token_in (sending) from initializations and a lot of token_out (receiving)
     assert swap.balances(receiving) > swap.balances(sending)
 
-    # oracle tokens  case
+    # min_dy_sending - send scarcer asset, receive more abundant asset
+    min_dy_sending = swap.get_dy(sending, receiving, amount)
+    # min_dy_receiving - send more abundant asset receive scarcer asset,
+    min_dy_receiving = swap.get_dy(receiving, sending, amount)
+
+    # oracle treatment (so that test works even for large-deviation oracle tokens)
     rate = 1
     if pool_type == 0:
         if pool_token_types[sending] == 1:
-            rate = rate / (pool_tokens[sending].exchangeRate() / 10 ** pool_tokens[sending].decimals())
+            rate = rate / (pool_tokens[sending].exchangeRate() / 10**18)
         if pool_token_types[receiving] == 1:
-            rate = rate * (pool_tokens[receiving].exchangeRate() / 10 ** pool_tokens[receiving].decimals())
+            rate = rate * (pool_tokens[receiving].exchangeRate() / 10**18)
 
     elif pool_type == 1:
         if metapool_token_type == 1:
-            if sending == 0:  # token_in is oracle
+            if sending == 0:
                 rate = rate / (underlying_tokens[0].exchangeRate() / 10**18)
-            else:  # token_out is oracle
+            if receiving == 0:
                 rate = rate * (underlying_tokens[0].exchangeRate() / 10**18)
-    # we need to scale these appropriately for tokens with different decimal values
-    # (# no such worries for now, 18 decimals everywhere)
-    # min_dy_sending - send scarcer asset, receive more abundant asset
-    min_dy_sending = swap.get_dy(sending, receiving, amounts[sending])  # / scaler[receiving]
-    # min_dy_receiving - send more abundant asset receive scarcer asset,
-    min_dy_receiving = swap.get_dy(receiving, sending, amounts[receiving])  # / scaler[sending]
+
     # min_dy_sending must be more than min_dy_receiving
-    assert min_dy_sending * rate > min_dy_receiving / rate  # Q? why / rate? need to think more about this
+    assert min_dy_sending * rate > min_dy_receiving
