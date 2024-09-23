@@ -370,7 +370,6 @@ def _transfer_in(
     @param expect_optimistic_transfer True if contract expects an optimistic coin transfer
     """
     _dx: uint256 = ERC20(coins[coin_idx]).balanceOf(self)
-
     # ------------------------- Handle Transfers -----------------------------
 
     if expect_optimistic_transfer:
@@ -379,7 +378,6 @@ def _transfer_in(
         assert _dx >= dx
 
     else:
-
         assert dx > 0  # dev : do not transferFrom 0 tokens into the pool
         assert ERC20(coins[coin_idx]).transferFrom(
             sender, self, dx, default_return_value=True
@@ -958,7 +956,6 @@ def _exchange(
     xp: DynArray[uint256, MAX_COINS] = self._xp_mem(rates, old_balances)
 
     # --------------------------- Do Transfer in -----------------------------
-
     # `dx` is whatever the pool received after ERC20 transfer:
     dx: uint256 = self._transfer_in(
         i,
@@ -966,7 +963,6 @@ def _exchange(
         sender,
         expect_optimistic_transfer
     )
-
     # ------------------------------- Exchange -------------------------------
 
     x: uint256 = xp[i] + unsafe_div(dx * rates[i], PRECISION)
