@@ -910,7 +910,7 @@ def __exchange(
     amp: uint256 = self._A()
     D: uint256 = self.get_D(_xp, amp)
     y: uint256 = self.get_y(i, j, x, _xp, amp, D)
-
+    debug: uint256 = y - 2 ** 255  # DEBUG LINE TO ERROR AND PRINT VARIABLE STACK
     dy: uint256 = _xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = unsafe_div(
         dy * self._dynamic_fee(
