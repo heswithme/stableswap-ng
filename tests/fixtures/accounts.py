@@ -4,10 +4,9 @@ import boa
 import pytest
 from eth_account.account import Account, LocalAccount
 
-from tests.utils.tokens import mint_for_testing
-
 from tests.constants import POOL_TYPES
 from tests.fixtures.constants import INITIAL_AMOUNT
+from tests.utils.tokens import mint_for_testing
 
 
 @pytest.fixture()
